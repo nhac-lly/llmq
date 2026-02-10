@@ -1,35 +1,32 @@
 [
     {
-        "name": "sales",
-        "values": [
-            300,
-            200,
-            100,
-            400,
-            150,
-            250
-        ]
+        "t": "bar",
+        "m": [
+            "prs_opened",
+            "prs_merged"
+        ],
+        "ti": "PR Velocity"
     },
     {
-        "name": "users",
-        "values": [
-            50,
-            20,
-            10,
-            40,
-            15,
-            25
-        ]
+        "t": "area",
+        "m": [
+            "time_to_merge"
+        ],
+        "ti": "Time to Merge (Avg Days)"
     },
     {
-        "name": "leads",
-        "values": [
-            130,
-            100,
-            140,
-            200,
-            150,
-            50
-        ]
+        "t": "line",
+        "m": [
+            "active_contributors"
+        ],
+        "ti": "Active Contributors"
+    },
+    {
+        "t": "bar",
+        "m": [
+            "bugs_reported",
+            "bugs_fixed"
+        ],
+        "ti": "Quality: Bugs"
     }
 ]

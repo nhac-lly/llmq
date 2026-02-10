@@ -113,4 +113,32 @@ export class UniversalChartOrchestrator {
             values: resultMap[`${metric}::${filterKey}`] || []
         }));
     }
+
+    /**
+     * Get available Global Filters for the UI to render
+     */
+    getAvailableFilters() {
+        return [
+            {
+                key: 'repository',
+                label: 'Repository',
+                type: 'select',
+                options: [
+                    { value: '', label: 'All Repositories' },
+                    { value: 'frontend-ui', label: 'Frontend UI' },
+                    { value: 'backend-api', label: 'Backend API' },
+                    { value: 'auth-service', label: 'Auth Service' },
+                ]
+            },
+            {
+                key: 'date',
+                label: 'Date Range',
+                type: 'select',
+                options: [
+                    { value: '30d', label: 'Last 30 Days' },
+                    { value: '7d', label: 'Last 7 Days' },
+                ]
+            }
+        ];
+    }
 }

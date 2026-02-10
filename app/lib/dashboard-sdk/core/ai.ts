@@ -2,18 +2,49 @@ import type { ChatMessage } from "../types";
 
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
 
-export async function sendChatRequest(apiKey: string, messages: ChatMessage[]) {
-    if (!apiKey) throw new Error("API Key is missing");
+interface ChatConfig {
+    apiKey?: string;
+    endpoint?: string;
+}
+
+export async function sendChatRequest(config: ChatConfig, messages: ChatMessage[]) {
+    // 1. Prefer Endpoint (Proxy) if available
+    if (config.endpoint) {
+        try {
+            const response = await fetch(config.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-llmq-sdk-token': 'LLMQ_ACCESS_GRANTED' // "Encrypted" access token
+                },
+                body: JSON.stringify({ messages })
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`Proxy Error: ${response.status} - ${err}`);
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content;
+        } catch (error) {
+            console.error("Chat Proxy Request Failed:", error);
+            throw error;
+        }
+    }
+
+    // 2. Fallback to Direct API Key
+    if (!config.apiKey) throw new Error("Configuration Error: Missing API Key or Endpoint");
 
     try {
         const response = await fetch(PERPLEXITY_API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${apiKey}`,
+                'Authorization': `Bearer ${config.apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'sonar', // Standard Perplexity model (formerly sonar-small/medium)
+                model: 'sonar',
                 messages: messages,
                 temperature: 0.2,
                 top_p: 0.9,

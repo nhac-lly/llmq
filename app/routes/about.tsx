@@ -110,7 +110,8 @@ export default function About() {
   window.onload = () => {
     if (window.renderDashboard) {
       window.renderDashboard('my-dashboard', {
-        apiKey: 'YOUR_PERPLEXITY_KEY', // Pass key here
+        apiEndpoint: 'https://your-backend.com/api/chat', // Secure Proxy
+        // apiKey: '...', // UNSAFE in public widgets, use apiEndpoint instead
         filters: { repository: 'frontend-ui' },
         specs: [
            { t: 'bar', m: ['prs_opened'], ti: 'PRs (Widget)' }

@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { sendChatRequest } from "../core/ai";
 import type { ChatMessage } from "../types";
 
-export const ChatPanel = ({ onClose, contextData, onUpdateDashboard, apiKey: initialApiKey }: { onClose: () => void, contextData: any, onUpdateDashboard?: (data: any) => void, apiKey?: string }) => {
+export const ChatPanel = ({ onClose, contextData, onUpdateDashboard, apiKey: initialApiKey, apiEndpoint }: { onClose: () => void, contextData: any, onUpdateDashboard?: (data: any) => void, apiKey?: string, apiEndpoint?: string }) => {
     const [input, setInput] = useState("");
-    // Use prop first, then local storage. Do NOT bundle Env Var here to avoid leaking in widget builds.
-    // The host app should pass the env var if available.
     const [apiKey, setApiKey] = useState(() => initialApiKey || localStorage.getItem("pplx_api_key") || "");
-    const [isConfiguring, setIsConfiguring] = useState(!apiKey);
+
+    // Config logic: If we have an endpoint, we don't need a key. 
+    // If no endpoint, we need a key.
+    const isReady = !!apiEndpoint || !!apiKey;
+    const [isConfiguring, setIsConfiguring] = useState(!isReady);
     const [isLoading, setIsLoading] = useState(false);
 
     // Initial message
@@ -84,7 +86,7 @@ Capabilities:
                 ...validHistory.map(m => ({ role: m.role, content: m.content }))
             ];
 
-            const responseText = await sendChatRequest(apiKey, apiMessages);
+            const responseText = await sendChatRequest({ apiKey, endpoint: apiEndpoint }, apiMessages);
 
             // Check for View Update Command
             const viewUpdateMatch = responseText.match(/:::VIEW_UPDATE\s*(\{.*?\})\s*:::/s);
@@ -107,7 +109,7 @@ Capabilities:
 
         } catch (error) {
             console.error(error);
-            setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I encountered an error connecting to Perplexity. Please check your API Key." }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I encountered an error. Please check your configuration." }]);
         } finally {
             setIsLoading(false);
         }
@@ -121,16 +123,23 @@ Capabilities:
                 display: 'flex', flexDirection: 'column', padding: '1.5rem', border: '1px solid #e2e8f0', zIndex: 100
             }}>
                 <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Setup AI Chat</h3>
-                <input
+                <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
+                    {apiEndpoint ? "Connect to custom AI endpoint?" : "Enter Perplexity API Key"}
+                </p>
+
+                {!apiEndpoint && <input
                     type="password"
                     placeholder="Enter Perplexity API Key"
                     onChange={(e) => setApiKey(e.target.value)}
                     value={apiKey}
                     style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '1rem' }}
-                />
+                />}
+
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                     <button onClick={onClose} style={{ padding: '0.5rem 1rem', background: 'transparent', border: 'none', cursor: 'pointer' }}>Cancel</button>
-                    <button onClick={() => handleSaveKey(apiKey)} style={{ padding: '0.5rem 1rem', background: '#3b82f6', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>Start Chat</button>
+                    <button onClick={() => !apiEndpoint ? handleSaveKey(apiKey) : setIsConfiguring(false)} style={{ padding: '0.5rem 1rem', background: '#3b82f6', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>
+                        {apiEndpoint ? "Connect" : "Start Chat"}
+                    </button>
                 </div>
             </div>
         )

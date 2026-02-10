@@ -13,7 +13,7 @@ interface DashboardProps {
     apiKey?: string; // AI API Key
 }
 
-export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey }: DashboardProps) => {
+export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiEndpoint }: DashboardProps) => {
     const [specs, setSpecs] = useState<ChartSpec[]>(initialSpecs);
     const [filters, setFilters] = useState<Record<string, any>>(initialFilters);
     const [dataMap, setDataMap] = useState<any>({}); // Using 'any' for now to match UCO return
@@ -219,6 +219,7 @@ export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey }: Da
                         contextData={{ kpiData, specs, globalFilters: filters }}
                         onUpdateDashboard={handleDashboardUpdate}
                         apiKey={apiKey}
+                        apiEndpoint={apiEndpoint}
                     />
                 </div>
             )}

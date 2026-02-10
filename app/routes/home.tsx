@@ -319,7 +319,7 @@ export default function Home() {
         onClose={() => setIsChatOpen(false)}
         contextData={{ kpiData, specs, globalFilters }}
         onUpdateDashboard={handleDashboardUpdate}
-        apiKey={import.meta.env.VITE_PERPLEXITY_API_KEY}
+        apiEndpoint="/api/chat"
       />}
     </div>
   );

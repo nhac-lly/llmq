@@ -1,9 +1,9 @@
 import type { Route } from "./+types/home";
 import { Link, useLoaderData, useSearchParams, useNavigate, useNavigation } from "react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchChartData, fetchDashboardMetrics } from "../services/api";
-import { billboardAdapter } from "../lib/uco/adapters/billboardAdapter";
-import { UniversalChartOrchestrator, type ChartSpec } from "../lib/uco/sdk";
+import { UniversalChartOrchestrator, BillboardChart, ChatPanel, type ChartSpec } from "../lib/dashboard-sdk";
+import { Sidebar } from "../components/Sidebar";
 
 // Initialize SDK
 const uco = new UniversalChartOrchestrator();
@@ -55,273 +55,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 // Explicit type for useLoaderData if inference fails
 type LoaderData = Awaited<ReturnType<typeof clientLoader>>;
 
-// Sub-component for individual chart lifecycle
-const BillboardChart = ({
-  id,
-  spec,
-  data,
-}: {
-  id: string,
-  spec: ChartSpec,
-  data: any[]
-}) => {
-  const chartInstance = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Lifecycle
-  useEffect(() => {
-    const bb = (window as any).bb;
-    if (!bb || !containerRef.current) return;
-
-    if (chartInstance.current) {
-      try { chartInstance.current.destroy(); } catch (e) { }
-      chartInstance.current = null;
-    }
-
-    const config = billboardAdapter(spec, data);
-
-    chartInstance.current = bb.generate({
-      ...config,
-      bindto: containerRef.current,
-      data: {
-        ...config.data,
-        columns: config.data?.columns || [],
-        type: config.data?.type || 'line'
-      }
-    });
-
-    return () => {
-      if (chartInstance.current) {
-        try { chartInstance.current.destroy(); } catch (e) { }
-        chartInstance.current = null;
-      }
-    };
-  }, []);
-
-  // Update Data/Spec
-  // Update Data/Spec
-  const isFirstRender = useRef(true);
-
-  useEffect(() => {
-    // Skip the first render because bb.generate() inside the mount effect 
-    // already handles the initial data.
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (!chartInstance.current) return;
-
-    const config = billboardAdapter(spec, data);
-
-    if (config.data) {
-      chartInstance.current.load({
-        columns: config.data.columns,
-        type: config.data.type,
-        groups: config.data.groups,
-        unload: true,
-      });
-    }
-  }, [spec, data]);
-
-  return (
-    <div style={{ minHeight: "300px", position: "relative" }}>
-      <div ref={containerRef} style={{ width: "100%", minHeight: "300px" }} />
-    </div>
-  );
-};
-
-// --- CHAT COMPONENTS ---
-import { sendChatRequest, type ChatMessage } from "../services/ai";
-
-const ChatPanel = ({ onClose, contextData }: { onClose: () => void, contextData: any }) => {
-  const [input, setInput] = useState("");
-  // Use Env Var as source of truth, fallback to local storage if needed (or empty)
-  const envKey = import.meta.env.VITE_PERPLEXITY_API_KEY || "";
-  const [apiKey, setApiKey] = useState(() => envKey || localStorage.getItem("pplx_api_key") || "");
-  const [isConfiguring, setIsConfiguring] = useState(!apiKey);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Initial message
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: "Hello! I have access to the dashboard metrics. Ask me about the PR velocity, SLA status, or contributors." }
-  ]);
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages]);
-
-  const handleSaveKey = (key: string) => {
-    setApiKey(key);
-    localStorage.setItem("pplx_api_key", key);
-    setIsConfiguring(false);
-  };
-
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userText = input;
-    setInput("");
-    setIsLoading(true);
-
-    const newHistory: ChatMessage[] = [...messages, { role: 'user', content: userText }];
-    setMessages(newHistory);
-
-    try {
-      // Construct System Prompt with Context
-      const systemPrompt = `
-You are an expert Data Analyst Assistant for a Git Role-Based Management Dashboard.
-Current Configuration & Data:
-- KPIs: ${JSON.stringify(contextData.kpiData)}
-- Global Filters: ${JSON.stringify(contextData.globalFilters)}
-- Active Charts: ${contextData.specs.map((s: any) => s.ti || s.m.join(', ')).join('; ')}
-
-Current Data Access:
-I have simulated access to the underlying Git metrics database.
-If asked about specific numbers not in the summary, assume logical extrapolations based on the summary provided.
-
-Rules:
-- Be concise and professional.
-- Refer to the specific metrics provided above.
-- If the user asks for actionable insights, provide them based on the SLA comliance and Review Cycles.
-            `.trim();
-
-      // Filter out the initial greeting if it's the first message and from assistant
-      const validHistory = newHistory.filter((msg, index) => {
-        if (index === 0 && msg.role === 'assistant') return false;
-        return true;
-      });
-
-      const apiMessages: ChatMessage[] = [
-        { role: 'system', content: systemPrompt },
-        ...validHistory.map(m => ({ role: m.role, content: m.content }))
-      ];
-
-      const responseText = await sendChatRequest(apiKey, apiMessages);
-      setMessages(prev => [...prev, { role: 'assistant', content: responseText }]);
-
-    } catch (error) {
-      console.error(error);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I encountered an error connecting to Perplexity. Please check your API Key." }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isConfiguring) {
-    return (
-      <div style={{
-        position: 'fixed', bottom: '2rem', right: '2rem', width: '350px', height: '200px',
-        background: 'white', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-        display: 'flex', flexDirection: 'column', padding: '1.5rem', border: '1px solid #e2e8f0', zIndex: 100
-      }}>
-        <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Setup AI Chat</h3>
-        <input
-          type="password"
-          placeholder="Enter Perplexity API Key"
-          onChange={(e) => setApiKey(e.target.value)}
-          value={apiKey}
-          style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '1rem' }}
-        />
-        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '0.5rem 1rem', background: 'transparent', border: 'none', cursor: 'pointer' }}>Cancel</button>
-          <button onClick={() => handleSaveKey(apiKey)} style={{ padding: '0.5rem 1rem', background: '#3b82f6', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>Start Chat</button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{
-      position: 'fixed',
-      bottom: '2rem',
-      right: '2rem',
-      width: '350px',
-      height: '500px',
-      background: 'white',
-      borderRadius: '16px',
-      boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      border: '1px solid #e2e8f0',
-      zIndex: 100
-    }}>
-      {/* Header */}
-      <div style={{ padding: '1rem', background: '#eff6ff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
-          <span style={{ fontWeight: '600', color: '#1e293b' }}>Analytics Assistant</span>
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={() => setIsConfiguring(true)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>⚙️</button>
-          <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.25rem', color: '#64748b' }}>×</button>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div ref={scrollRef} style={{ flex: 1, padding: '1rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {messages.map((msg, i) => (
-          <div key={i} style={{
-            alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-            maxWidth: '85%',
-            padding: '0.75rem 1rem',
-            borderRadius: '12px',
-            fontSize: '0.875rem',
-            lineHeight: '1.4',
-            background: msg.role === 'user' ? '#3b82f6' : '#f1f5f9',
-            color: msg.role === 'user' ? 'white' : '#334155',
-            borderBottomRightRadius: msg.role === 'user' ? '2px' : '12px',
-            borderBottomLeftRadius: msg.role === 'assistant' ? '2px' : '12px',
-            whiteSpace: 'pre-wrap'
-          }}>
-            {msg.content}
-          </div>
-        ))}
-        {isLoading && <div style={{ alignSelf: 'flex-start', color: '#94a3b8', fontSize: '0.8rem', marginLeft: '1rem' }}>Thinking...</div>}
-      </div>
-
-      {/* Input */}
-      <div style={{ padding: '1rem', borderTop: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()}
-            placeholder="Ask about your metrics..."
-            disabled={isLoading}
-            style={{
-              flex: 1,
-              padding: '0.5rem 0.75rem',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              outline: 'none',
-              fontSize: '0.875rem'
-            }}
-          />
-          <button onClick={handleSend} disabled={isLoading} style={{
-            background: isLoading ? '#94a3b8' : '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '0 1rem',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}>
-            Send
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
-
-// ... (component start)
 export default function Home() {
   const { specs, resultMap, globalFilters, kpiData } = useLoaderData() as LoaderData;
   const [searchParams] = useSearchParams();
@@ -334,9 +68,11 @@ export default function Home() {
     const newParams = new URLSearchParams(searchParams);
     if (value) newParams.set(key, value);
     else newParams.delete(key);
+    navigate(`?${cleanURL(newParams)}`);
+  };
 
-    // Manual decoding (clean URLs)
-    const queryString = newParams.toString()
+  const cleanURL = (params: URLSearchParams) => {
+    return params.toString()
       .replace(/%5B/g, '[')
       .replace(/%5D/g, ']')
       .replace(/%7B/g, '{')
@@ -344,13 +80,28 @@ export default function Home() {
       .replace(/%22/g, '"')
       .replace(/%2C/g, ',')
       .replace(/%3A/g, ':');
+  };
 
-    navigate(`?${queryString}`);
+  const handleDashboardUpdate = (newContext: { specs?: any[], filters?: Record<string, any> }) => {
+    const newParams = new URLSearchParams(searchParams);
+
+    // Update Specs (Charts)
+    if (newContext.specs) {
+      newParams.set('c', JSON.stringify(newContext.specs));
+    }
+
+    // Update Filters
+    if (newContext.filters) {
+      Object.entries(newContext.filters).forEach(([key, value]) => {
+        if (value) newParams.set(key, String(value));
+        else newParams.delete(key);
+      });
+    }
+
+    navigate(`?${cleanURL(newParams)}`);
   };
 
   const [isChatOpen, setIsChatOpen] = useState(true);
-
-  // ... inside Home component ...
 
   const styles = {
     container: {
@@ -360,15 +111,7 @@ export default function Home() {
       fontFamily: "'Inter', sans-serif",
       color: "#0f172a"
     },
-    sidebar: {
-      width: "64px",
-      background: "#1e293b",
-      display: "flex",
-      flexDirection: "column" as const,
-      alignItems: "center",
-      padding: "1rem 0",
-      gap: "1.5rem"
-    },
+    // Sidebar style removed (handled by component)
     main: {
       flex: 1,
       padding: "2rem",
@@ -454,13 +197,7 @@ export default function Home() {
 
   return (
     <div style={styles.container}>
-      {/* Sidebar */}
-      <aside style={styles.sidebar}>
-        <div style={{ ...styles.icon, background: '#3b82f6' }} />
-        <div style={styles.icon} />
-        <div style={styles.icon} />
-        <div style={styles.icon} />
-      </aside>
+      <Sidebar />
 
       {/* Main Content */}
       <main style={styles.main}>
@@ -581,6 +318,8 @@ export default function Home() {
       {isChatOpen && <ChatPanel
         onClose={() => setIsChatOpen(false)}
         contextData={{ kpiData, specs, globalFilters }}
+        onUpdateDashboard={handleDashboardUpdate}
+        apiKey={import.meta.env.VITE_PERPLEXITY_API_KEY}
       />}
     </div>
   );

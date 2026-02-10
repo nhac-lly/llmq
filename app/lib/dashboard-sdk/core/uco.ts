@@ -1,12 +1,6 @@
-import { fetchChartData } from "../../services/api";
+import { fetchChartData } from "../../../services/api";
+import type { ChartSpec, DataMap } from "../types";
 
-export interface ChartSpec {
-    t: 'line' | 'bar' | 'area' | 'pie';
-    m: string[]; // Metrics
-    s?: boolean; // Stacked
-    ti?: string; // Title
-    f?: Record<string, any>; // Independent Filters (specific to this chart)
-}
 
 export interface UCOConfig {
     endpoint?: string; // API Endpoint (optional for now as we use mock)

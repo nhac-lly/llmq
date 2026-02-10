@@ -15,7 +15,12 @@ const DATABASE: Record<string, number[]> = {
 
     // Bugs Reported vs Fixed
     bugs_reported: [5, 3, 6, 8, 4, 2],
-    bugs_fixed: [4, 3, 5, 7, 3, 2]
+    bugs_fixed: [4, 3, 5, 7, 3, 2],
+
+    // Strategy KPIs (Simulated trends)
+    health_score: [98, 97, 99, 98, 98.5, 99],
+    review_cycles: [1.5, 1.4, 1.3, 1.2, 1.1, 1.2],
+    sla_compliance: [92, 93, 91, 94, 95, 94.2]
 };
 
 export async function fetchChartData(metrics: string[], filters?: Record<string, any>): Promise<any[]> {

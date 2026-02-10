@@ -1,5 +1,5 @@
 
-import type { ChartSpec } from "../UniversalChartController";
+import type { ChartSpec } from "../../types";
 import type { ChartOptions } from "billboard.js";
 
 export const billboardAdapter = (spec: ChartSpec, rawData: any[]): ChartOptions => {

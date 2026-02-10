@@ -7,6 +7,7 @@
     <title>Acme Corp - Analytics Integration</title>
     <!-- 1. External Styles (Billboard.js) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/billboard.js@3/dist/billboard.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/billboard.js@3/dist/billboard.pkgd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
@@ -193,7 +194,8 @@
                 if (window.renderDashboard) {
                     window.renderDashboard('external-dashboard', {
                         apiEndpoint: '/api/chat', // Change this to test error states
-                        filters: { repository: 'backend-api' }, // Filter logic
+                        apiEndpoint: '/api/chat',
+                        // filters: { repository: 'backend-api' }, // Commented out to ensure data flow first
                         specs: [
                             { t: 'bar', m: ['prs_opened', 'prs_merged'], ti: 'Pull Request Velocity' },
                             { t: 'area', m: ['time_to_merge'], ti: 'Merge Time Trends' },

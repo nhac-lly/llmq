@@ -57,9 +57,11 @@ export class UniversalChartOrchestrator {
                 if (!results[cacheKey] && !errors[cacheKey]) {
                     const p = fetchChartData([metric], finalFilters, this.config.endpoint)
                         .then(data => {
+                            console.log(`[UCO] Fetched ${metric}:`, data);
                             if (data && data.length > 0) {
                                 results[cacheKey] = data[0].values;
                             } else {
+                                console.warn(`[UCO] No data for ${metric}`);
                                 results[cacheKey] = [];
                             }
                         })

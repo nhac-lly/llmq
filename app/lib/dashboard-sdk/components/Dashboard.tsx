@@ -199,6 +199,8 @@ export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiE
                     const chartData = uco.getDataForSpec(spec, dataMap, filters);
                     const error = uco.getErrorForSpec(spec, errorMap, filters);
 
+                    console.log(`[Dashboard] Rendering Chart ${index} (${spec.ti})`, { chartData, error });
+
                     return (
                         <div key={index} style={styles.chartCard}>
                             <h3 style={{ fontWeight: '600', fontSize: '1.125rem', marginBottom: '1rem' }}>{spec.ti}</h3>

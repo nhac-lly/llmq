@@ -11,6 +11,8 @@ export const billboardAdapter = (spec: ChartSpec, rawData: any[]): ChartOptions 
         .filter(item => spec.m.includes(item.name))
         .map(item => [item.name, ...item.values]);
 
+    console.log(`[Adapter] Generating config for ${spec.ti}`, { spec, rawData, columns });
+
     const groups = spec.s ? [spec.m] : [];
 
     return {

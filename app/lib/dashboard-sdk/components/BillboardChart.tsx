@@ -18,7 +18,10 @@ export const BillboardChart = ({
     // Lifecycle
     useEffect(() => {
         const bb = (window as any).bb;
-        if (!bb || !containerRef.current) return;
+        if (!bb || !containerRef.current) {
+            if (!bb) console.error("[BillboardChart] 'bb' (Billboard.js) is missing from global window. Please include the script.");
+            return;
+        }
 
         if (chartInstance.current) {
             try { chartInstance.current.destroy(); } catch (e) { }
@@ -55,6 +58,8 @@ export const BillboardChart = ({
             isFirstRender.current = false;
             return;
         }
+
+        console.log(`[BillboardChart] Updating Data`, { id, data });
 
         if (!chartInstance.current) return;
 

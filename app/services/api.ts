@@ -14,12 +14,18 @@ export async function fetchChartData(metrics: string[], filters?: Record<string,
     let baseUrl = API_BASE;
 
     if (apiEndpoint !== undefined) {
-        if (!apiEndpoint) {
-            // Empty string provided -> Explicit "No Endpoint"
-            return [];
+        if (!apiEndpoint) return [];
+
+        // Robustly switch from chat -> dashboard endpoint
+        // Or trust the provided endpoint if it doesn't look like a chat endpoint
+        if (apiEndpoint.includes('/chat')) {
+            baseUrl = apiEndpoint.replace('/chat', '/dashboard');
+        } else {
+            baseUrl = apiEndpoint;
         }
-        baseUrl = apiEndpoint.replace('/chat', '/dashboard');
     }
+
+    console.log(`[SDK] Fetching chart data from: ${baseUrl}`);
 
     try {
         const response = await fetch(`${baseUrl}?${params.toString()}`, {

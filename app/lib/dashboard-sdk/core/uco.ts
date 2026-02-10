@@ -14,6 +14,10 @@ export class UniversalChartOrchestrator {
         this.config = config;
     }
 
+    setConfig(config: Partial<UCOConfig>) {
+        this.config = { ...this.config, ...config };
+    }
+
     /**
      * Parse the URL query string into Chart Specifications
      * @param searchParams URLSearchParams object or query string
@@ -37,61 +41,40 @@ export class UniversalChartOrchestrator {
      * @param specs Array of Chart Specs
      * @param globalFilters Filters applied to ALL charts (e.g. from URL ?filter=...)
      */
-    async fetchAll(specs: ChartSpec[], globalFilters: Record<string, any> = {}): Promise<Record<string, any[]>> {
+    async fetchAll(specs: ChartSpec[], globalFilters: Record<string, any> = {}): Promise<{ data: Record<string, any[]>, errors: Record<string, string> }> {
         const mergedFilters = { ...this.config.defaultFilters, ...globalFilters };
-
-        // In a real scenario, we might batch these differently.
-        // For now, we'll simulate fetching based on unique metric+filter combinations 
-        // OR just simple independent fetching to support the requirement.
-
-        // To support "Independent Filters", we can't just batch by metric name alone 
-        // because "Sales (US)" is different from "Sales (EU)".
-        // So we will fetch for EACH chart spec individually and then merge results, 
-        // keyed by a unique identifier or just return a map of "ChartIndex -> Data".
-
-        // However, to keep with the previous pattern of "DataMap", let's see.
-        // If Chart 1 wants "Sales" with Filter A, and Chart 2 wants "Sales" with Filter B...
-        // The DataMap key needs to be unique. 
-        // Let's stick to the simplest approach first: 
-        // The SDK returns a map where key is the `metric` name. 
-        // BUT if independent filters exist, that breaks the simple map.
-
-        // REVISION: The `fetchAll` should probably return array of data objects corresponding to input specs,
-        // OR a map where the key is generated.
-
-        // Let's implement a smarter fetcher:
-        // 1. Identify all unique requests. A request is (Metric + MergedFilters).
-
         const results: Record<string, any[]> = {};
+        const errors: Record<string, string> = {};
         const promises: Promise<void>[] = [];
 
         for (const spec of specs) {
-            // Merge global filters with chart-specific filters
             const finalFilters = { ...mergedFilters, ...(spec.f || {}) };
 
-            // For this specific chart's metrics
             for (const metric of spec.m) {
-                // Generate a unique key for the data cache: "metric::JSON(filters)"
                 const filterKey = JSON.stringify(finalFilters);
                 const cacheKey = `${metric}::${filterKey}`;
 
-                if (!results[cacheKey]) {
-                    // Trigger fetch
-                    const p = fetchChartData([metric], finalFilters).then(data => {
-                        // fetchChartData returns [{ name: 'sales', values: [...] }]
-                        if (data && data.length > 0) {
-                            results[cacheKey] = data[0].values;
-                        } else {
-                            results[cacheKey] = [];
-                        }
-                    });
+                if (!results[cacheKey] && !errors[cacheKey]) {
+                    const p = fetchChartData([metric], finalFilters, this.config.endpoint)
+                        .then(data => {
+                            if (data && data.length > 0) {
+                                results[cacheKey] = data[0].values;
+                            } else {
+                                results[cacheKey] = [];
+                            }
+                        })
+                        .catch(err => {
+                            console.error(`Failed to fetch ${metric}:`, err);
+                            errors[cacheKey] = "Failed to load data";
+                            results[cacheKey] = []; // fallback to empty
+                        });
                     promises.push(p);
                 }
             }
         }
 
         await Promise.all(promises);
-        return results;
+        return { data: results, errors };
     }
 
     /**
@@ -106,6 +89,21 @@ export class UniversalChartOrchestrator {
             name: metric,
             values: resultMap[`${metric}::${filterKey}`] || []
         }));
+    }
+
+    /**
+     * Helper to check if a specific spec has errors
+     */
+    getErrorForSpec(spec: ChartSpec, errorMap: Record<string, string>, globalFilters: Record<string, any> = {}): string | null {
+        const mergedFilters = { ...this.config.defaultFilters, ...globalFilters };
+        const finalFilters = { ...mergedFilters, ...(spec.f || {}) };
+        const filterKey = JSON.stringify(finalFilters);
+
+        for (const metric of spec.m) {
+            const key = `${metric}::${filterKey}`;
+            if (errorMap[key]) return errorMap[key];
+        }
+        return null;
     }
 
     /**

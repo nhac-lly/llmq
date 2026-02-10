@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLMQ Dashboard SDK Sample</title>
+
+    <!-- 1. Include Styles -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/billboard.js@3/dist/billboard.min.css">
+    <link rel="stylesheet" href="/sdk/style.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: lightblue;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #0f172a;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-container {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            min-height: 800px;
+            overflow: hidden;
+            position: relative;
+            /* Important for chat panel positioning */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>External Dashboard Integration</h1>
+            <h2>(from external site)</h2>
+        </div>
+
+        <!-- 2. Dashboard Container -->
+        <div id="external-dashboard" class="dashboard-container"></div>
+    </div>
+
+    <!-- 3. Load SDK -->
+    <script type="module" src="/sdk/dashboard-widget.es.js"></script>
+
+    <!-- 4. Initialize -->
+    <script>
+        window.onload = () => {
+            // Wait for SDK to attach to window
+            const init = () => {
+                if (window.renderDashboard) {
+                    window.renderDashboard('external-dashboard', {
+                        apiEndpoint: 'https://thisshouldcauseerror.com/api',
+                        filters: { repository: '' },
+                        specs: [
+                            { t: 'bar', m: ['prs_opened', 'prs_merged'], ti: 'Pull Request Velocity' },
+                            { t: 'line', m: ['active_contributors'], ti: 'Contributor Growth' },
+                            { t: 'area', m: ['sla_compliance'], ti: 'SLA Compliance Trend' }
+                        ]
+                    });
+                } else {
+                    setTimeout(init, 50);
+                }
+            };
+            init();
+        };  
+    </script>
+</body>
+
+</html>

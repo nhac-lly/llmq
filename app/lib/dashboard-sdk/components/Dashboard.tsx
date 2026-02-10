@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { UniversalChartOrchestrator } from "../core/uco";
 import { BillboardChart } from "./BillboardChart";
 import { ChatPanel } from "./ChatPanel";
-import { fetchDashboardMetrics } from "../../../services/api";
+// import { fetchDashboardMetrics } from "../../../services/api"; // Removed
 import type { ChartSpec, DataMap } from "../types";
 
 // Types
@@ -11,18 +11,25 @@ interface DashboardProps {
     initialFilters?: Record<string, any>;
     apiEndpoint?: string;
     apiKey?: string; // AI API Key
+    contextData?: Record<string, any>; // Optional context for Chat (e.g. KPIs)
 }
 
-export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiEndpoint }: DashboardProps) => {
+export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiEndpoint, contextData = {} }: DashboardProps) => {
     const [specs, setSpecs] = useState<ChartSpec[]>(initialSpecs);
     const [filters, setFilters] = useState<Record<string, any>>(initialFilters);
-    const [dataMap, setDataMap] = useState<any>({}); // Using 'any' for now to match UCO return
-    const [kpiData, setKpiData] = useState<any>({ healthScore: 0, reviewCycles: 0, slaCompliance: 0 });
+    const [dataMap, setDataMap] = useState<any>({});
+    const [errorMap, setErrorMap] = useState<Record<string, string>>({});
+
     const [loading, setLoading] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(true);
 
-    const ucoRef = useRef(new UniversalChartOrchestrator());
+    const ucoRef = useRef(new UniversalChartOrchestrator({ endpoint: apiEndpoint }));
     const uco = ucoRef.current;
+
+    // Update UCO config if endpoint changes
+    useEffect(() => {
+        uco.setConfig({ endpoint: apiEndpoint });
+    }, [apiEndpoint]);
 
     // Initial Data Fetch & Updates
     useEffect(() => {
@@ -41,13 +48,13 @@ export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiE
                     setSpecs(activeSpecs);
                 }
 
-                const [results, kpis] = await Promise.all([
-                    uco.fetchAll(activeSpecs, filters),
-                    fetchDashboardMetrics(filters)
-                ]);
+                const { data, errors } = await uco.fetchAll(activeSpecs, filters);
+                setDataMap(data);
+                setErrorMap(errors);
 
-                setDataMap(results);
-                setKpiData(kpis);
+
+                // Note: We no longer fetch KPIs here. 
+                // Host app must pass them if they want them shown.
             } catch (err) {
                 console.error("Dashboard failed to load:", err);
             } finally {
@@ -182,29 +189,36 @@ export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiE
             </header>
 
             {/* KPIs */}
-            <div style={styles.metricsGrid}>
-                <div style={styles.metricCard}>
-                    <h3 style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>System Health</h3>
-                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>{kpiData.healthScore}%</div>
-                </div>
-                <div style={styles.metricCard}>
-                    <h3 style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>Review Cycles</h3>
-                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#3b82f6' }}>{kpiData.reviewCycles}</div>
-                </div>
-                <div style={styles.metricCard}>
-                    <h3 style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>SLA Compliance</h3>
-                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>{kpiData.slaCompliance}%</div>
-                </div>
-            </div>
+
 
             {/* Charts */}
             <div style={styles.chartsGrid}>
                 {specs.map((spec, index) => {
                     const chartData = uco.getDataForSpec(spec, dataMap, filters);
+                    const error = uco.getErrorForSpec(spec, errorMap, filters);
+
                     return (
                         <div key={index} style={styles.chartCard}>
                             <h3 style={{ fontWeight: '600', fontSize: '1.125rem', marginBottom: '1rem' }}>{spec.ti}</h3>
-                            <BillboardChart id={`embed-chart-${index}`} spec={spec} data={chartData} />
+                            {error ? (
+                                <div style={{
+                                    height: '300px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#ef4444',
+                                    background: '#fef2f2',
+                                    borderRadius: '8px',
+                                    flexDirection: 'column',
+                                    gap: '0.5rem'
+                                }}>
+                                    <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                                    <span>Failed to load data</span>
+                                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>Check API Endpoint</span>
+                                </div>
+                            ) : (
+                                <BillboardChart id={`embed-chart-${index}`} spec={spec} data={chartData} />
+                            )}
                         </div>
                     );
                 })}
@@ -216,7 +230,7 @@ export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiE
                 <div style={{ position: 'fixed', bottom: 0, right: 0, zIndex: 9001 }}>
                     <ChatPanel
                         onClose={() => setIsChatOpen(false)}
-                        contextData={{ kpiData, specs, globalFilters: filters }}
+                        contextData={{ ...contextData, specs, globalFilters: filters }}
                         onUpdateDashboard={handleDashboardUpdate}
                         apiKey={apiKey}
                         apiEndpoint={apiEndpoint}

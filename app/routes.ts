@@ -6,4 +6,5 @@ export default [
     route("about", "routes/about.tsx"),
     route("pricing", "routes/pricing.tsx"),
     route("api/chat", "routes/api.chat.ts"),
+    route("api/dashboard", "routes/api.dashboard.ts"),
 ] satisfies RouteConfig;

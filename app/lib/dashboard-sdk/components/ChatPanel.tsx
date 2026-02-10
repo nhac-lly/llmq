@@ -4,12 +4,15 @@ import type { ChatMessage } from "../types";
 
 export const ChatPanel = ({ onClose, contextData, onUpdateDashboard, apiKey: initialApiKey, apiEndpoint }: { onClose: () => void, contextData: any, onUpdateDashboard?: (data: any) => void, apiKey?: string, apiEndpoint?: string }) => {
     const [input, setInput] = useState("");
-    const [apiKey, setApiKey] = useState(() => initialApiKey || localStorage.getItem("pplx_api_key") || "");
 
-    // Config logic: If we have an endpoint, we don't need a key. 
-    // If no endpoint, we need a key.
-    const isReady = !!apiEndpoint || !!apiKey;
-    const [isConfiguring, setIsConfiguring] = useState(!isReady);
+    // Secure Default: Use provided endpoint OR default to /api/chat
+    // We treat empty string as "Use Default" here to ensure Chat works without config
+    const effectiveEndpoint = apiEndpoint || '/api/chat';
+
+    // Note: We ignore client-side API keys to enforce secure proxy usage
+    const apiKey = "";
+
+    const [isConfiguring, setIsConfiguring] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     // Initial message
@@ -23,11 +26,7 @@ export const ChatPanel = ({ onClose, contextData, onUpdateDashboard, apiKey: ini
         if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, [messages]);
 
-    const handleSaveKey = (key: string) => {
-        setApiKey(key);
-        localStorage.setItem("pplx_api_key", key);
-        setIsConfiguring(false);
-    };
+    // Removed handleSaveKey explicitly as we don't want client-side keys
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
@@ -86,7 +85,7 @@ Capabilities:
                 ...validHistory.map(m => ({ role: m.role, content: m.content }))
             ];
 
-            const responseText = await sendChatRequest({ apiKey, endpoint: apiEndpoint }, apiMessages);
+            const responseText = await sendChatRequest({ apiKey, endpoint: effectiveEndpoint }, apiMessages);
 
             // Check for View Update Command
             const viewUpdateMatch = responseText.match(/:::VIEW_UPDATE\s*(\{.*?\})\s*:::/s);
@@ -115,34 +114,12 @@ Capabilities:
         }
     };
 
+    // Configuration UI Removed for Security
+    // If we ever need it back, we can re-enable it.
+    // For now, prevent rendering it.
     if (isConfiguring) {
-        return (
-            <div style={{
-                position: 'fixed', bottom: '2rem', right: '2rem', width: '350px', height: '200px',
-                background: 'white', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                display: 'flex', flexDirection: 'column', padding: '1.5rem', border: '1px solid #e2e8f0', zIndex: 100
-            }}>
-                <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Setup AI Chat</h3>
-                <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
-                    {apiEndpoint ? "Connect to custom AI endpoint?" : "Enter Perplexity API Key"}
-                </p>
-
-                {!apiEndpoint && <input
-                    type="password"
-                    placeholder="Enter Perplexity API Key"
-                    onChange={(e) => setApiKey(e.target.value)}
-                    value={apiKey}
-                    style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '1rem' }}
-                />}
-
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                    <button onClick={onClose} style={{ padding: '0.5rem 1rem', background: 'transparent', border: 'none', cursor: 'pointer' }}>Cancel</button>
-                    <button onClick={() => !apiEndpoint ? handleSaveKey(apiKey) : setIsConfiguring(false)} style={{ padding: '0.5rem 1rem', background: '#3b82f6', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>
-                        {apiEndpoint ? "Connect" : "Start Chat"}
-                    </button>
-                </div>
-            </div>
-        )
+        setIsConfiguring(false); // Auto-close if it somehow gets open
+        return null;
     }
 
     return (

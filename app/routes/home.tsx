@@ -1,7 +1,8 @@
 import type { Route } from "./+types/home";
 import { Link, useLoaderData, useSearchParams, useNavigate, useNavigation } from "react-router";
 import { useEffect, useState } from "react";
-import { fetchChartData, fetchDashboardMetrics } from "../services/api";
+import { fetchChartData } from "../services/api";
+import { fetchDashboardMetrics } from "../services/mock_kpi";
 import { UniversalChartOrchestrator, BillboardChart, ChatPanel, type ChartSpec } from "../lib/dashboard-sdk";
 import { Sidebar } from "../components/Sidebar";
 
@@ -44,7 +45,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 
   // 3. Fetch Data Logic (SDK)
   // this handles merging global filters + independent chart filters
-  const [resultMap, kpiData] = await Promise.all([
+  const [{ data: resultMap, errors }, kpiData] = await Promise.all([
     uco.fetchAll(specs, globalFilters),
     fetchDashboardMetrics(globalFilters)
   ]);
@@ -253,6 +254,7 @@ export default function Home() {
         </header>
 
         {/* Top Metrics Row (Placeholder for Stitch Design 'System Health', etc.) */}
+        {/* Top Metrics Row (KPIs moved from SDK to Host) */}
         <div style={styles.metricsGrid}>
           <div style={styles.metricCard}>
             <h3 style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.5rem' }}>System Health Score</h3>

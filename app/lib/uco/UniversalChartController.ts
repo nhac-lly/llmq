@@ -26,7 +26,8 @@ export class UniversalChartController {
         const params = new URLSearchParams(window.location.search);
         const raw = params.get(this.queryKey);
         try {
-            return raw ? JSON.parse(decodeURIComponent(raw)) : [];
+            // No need to decodeURIComponent if we rely on standard URLSearchParams decoding
+            return raw ? JSON.parse(raw) : [];
         } catch (e) {
             console.error("UMCO: Parse Error", e);
             return [];
@@ -38,10 +39,21 @@ export class UniversalChartController {
         if (typeof window === 'undefined') return;
 
         const params = new URLSearchParams(window.location.search);
-        const encoded = encodeURIComponent(JSON.stringify(newState));
-        params.set(this.queryKey, encoded);
+        // User requested no extra encoding. URLSearchParams will handle necessary escaping.
+        const raw = JSON.stringify(newState);
+        params.set(this.queryKey, raw);
 
-        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        // Decode specific characters to keep URL clean (User Request)
+        const queryString = params.toString()
+            .replace(/%5B/g, '[')
+            .replace(/%5D/g, ']')
+            .replace(/%7B/g, '{')
+            .replace(/%7D/g, '}')
+            .replace(/%22/g, '"')
+            .replace(/%2C/g, ',')
+            .replace(/%3A/g, ':');
+
+        const newUrl = `${window.location.pathname}?${queryString}`;
         window.history.pushState({}, '', newUrl);
         this.notify();
     }

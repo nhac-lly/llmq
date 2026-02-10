@@ -87,7 +87,9 @@ export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiE
             background: "#f8fafc",
             minHeight: "100%",
             display: "flex",
-            flexDirection: "column" as const
+            flexDirection: "column" as const,
+            padding: "1.5rem",
+            boxSizing: "border-box" as const
         },
         header: {
             display: "flex",

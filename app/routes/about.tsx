@@ -1,4 +1,5 @@
 import { Sidebar } from "../components/Sidebar";
+import { useEffect } from "react";
 
 export default function About() {
     const styles = {
@@ -90,6 +91,25 @@ export default function About() {
                     </section>
 
                     <section style={{ marginTop: "4rem" }}>
+                        <h2 style={styles.sectionTitle}>Live Demo</h2>
+                        <p style={{ color: "#94a3b8", marginBottom: "2rem" }}>
+                            Below is the actua <strong>SDK Widget</strong> running inside this React page.
+                            It is isolated from the main app logic and fetches its own data via the secure proxy.
+                        </p>
+
+                        {/* Widget Container */}
+                        <div id="demo-dashboard" style={{
+                            background: "#f1f5f9",
+                            padding: "2rem",
+                            borderRadius: "12px",
+                            minHeight: "500px"
+                        }}></div>
+
+                        {/* Init Script */}
+                        <DemoInitializer />
+                    </section>
+
+                    <section style={{ marginTop: "4rem" }}>
                         <h2 style={styles.sectionTitle}>Embed as Widget</h2>
                         <div style={styles.card}>
                             <h3 style={styles.cardTitle}>Drop-in Script</h3>
@@ -109,14 +129,13 @@ export default function About() {
 <script>
   window.onload = () => {
     if (window.renderDashboard) {
-      window.renderDashboard('my-dashboard', {
-        apiEndpoint: 'https://your-backend.com/api/chat', // Secure Proxy
-        // apiKey: '...', // UNSAFE in public widgets, use apiEndpoint instead
-        filters: { repository: 'frontend-ui' },
-        specs: [
-           { t: 'bar', m: ['prs_opened'], ti: 'PRs (Widget)' }
-        ]
-      });
+        window.renderDashboard('my-dashboard', {
+            apiEndpoint: '/api/chat', // Use Secure Proxy
+            specs: [
+                { t: 'bar', m: ['prs_opened', 'prs_merged'], ti: 'PR Velocity' },
+                { t: 'area', m: ['time_to_merge'], ti: 'Time to Merge' }
+            ]
+        });
     }
   };
 </script>`}
@@ -128,4 +147,44 @@ export default function About() {
             </main>
         </div>
     );
+}
+
+// Helper component to initialize the widget
+function DemoInitializer() {
+    useEffect(() => {
+        const initWidget = () => {
+            if ((window as any).renderDashboard) {
+                (window as any).renderDashboard('demo-dashboard', {
+                    apiEndpoint: '/api/chat',
+                    specs: [
+                        { t: 'bar', m: ['prs_opened', 'prs_merged'], ti: 'Pull Request Velocity' },
+                        { t: 'line', m: ['active_contributors'], ti: 'Active Contributors' }
+                    ]
+                });
+            } else {
+                // Retry if script not yet loaded
+                setTimeout(initWidget, 500);
+            }
+        };
+
+        // Load Script Dynamically
+        const script = document.createElement('script');
+        script.src = "/sdk/dashboard-widget.es.js";
+        script.type = "module";
+        script.onload = initWidget;
+        document.body.appendChild(script);
+
+        // Load Styles
+        const link = document.createElement('link');
+        link.rel = "stylesheet";
+        link.href = "https://cdn.jsdelivr.net/npm/billboard.js@3/dist/billboard.min.css";
+        document.head.appendChild(link);
+
+        return () => {
+            document.body.removeChild(script);
+            // document.head.removeChild(link); // Keep styles needed for cleanup?
+        }
+    }, []);
+
+    return null;
 }

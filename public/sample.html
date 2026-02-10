@@ -4,77 +4,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLMQ Dashboard SDK Sample</title>
-
-    <!-- 1. Include Styles -->
+    <title>Acme Corp - Analytics Integration</title>
+    <!-- 1. External Styles (Billboard.js) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/billboard.js@3/dist/billboard.min.css">
-    <link rel="stylesheet" href="/sdk/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --host-bg: #f8fafc;
+            --sidebar-bg: #1e293b;
+            --accent: #3b82f6;
+            --text-main: #334155;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: lightblue;
+            background: var(--host-bg);
             margin: 0;
+            display: flex;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        /* Fake Host Sidebar */
+        .host-sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            color: white;
             padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        .host-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        h1 {
-            color: #0f172a;
+        .host-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .host-link {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: #94a3b8;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .host-link:hover,
+        .host-link.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        /* Main Content Area */
+        .host-main {
+            flex: 1;
+            padding: 2rem 3rem;
+            overflow-y: auto;
+        }
+
+        .host-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 2rem;
         }
 
-        .dashboard-container {
-            background: #fff;
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #cbd5e1;
+        }
+
+        /* SDK Highlight Container */
+        .sdk-wrapper {
+            background: white;
             border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            min-height: 800px;
-            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
             position: relative;
-            /* Important for chat panel positioning */
+            overflow: hidden;
+        }
+
+        .sdk-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #f59e0b;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-bottom-left-radius: 8px;
+            z-index: 10;
+        }
+
+        /* The actual container script targets */
+        #external-dashboard {
+            min-height: 600px;
+            /* The SDK will fill this */
+        }
+
+        /* Note logic */
+        .note {
+            background: #eff6ff;
+            border-left: 4px solid var(--accent);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h1>External Dashboard Integration</h1>
-            <h2>(from external site)</h2>
+    <!-- Host Sidebar -->
+    <div class="host-sidebar">
+        <div class="host-brand">
+            <div style="width: 24px; height: 24px; background: #3b82f6; border-radius: 4px;"></div>
+            Acme Corp
         </div>
-
-        <!-- 2. Dashboard Container -->
-        <div id="external-dashboard" class="dashboard-container"></div>
+        <nav class="host-nav">
+            <a class="host-link">Overview</a>
+            <a class="host-link">Projects</a>
+            <a class="host-link">Team</a>
+            <a class="host-link active">Analytics & Reports</a>
+            <a class="host-link">Settings</a>
+        </nav>
     </div>
 
-    <!-- 3. Load SDK -->
+    <!-- Host Main Area -->
+    <div class="host-main">
+        <header class="host-header">
+            <div>
+                <h1 style="margin: 0; font-size: 1.8rem; font-weight: 700;">Engineering Analytics</h1>
+                <p style="margin: 0.5rem 0 0; color: #64748b;">embedded for the "Backend API" team</p>
+            </div>
+            <div class="user-profile">
+                <div style="text-align: right;">
+                    <div style="font-weight: 600;">Jane Boss</div>
+                    <div style="font-size: 0.8rem; color: #64748b;">VP of Engineering</div>
+                </div>
+                <div class="avatar"></div>
+            </div>
+        </header>
+
+        <div class="note">
+            <strong>Integration Demo:</strong> The section below is the <code
+                style="background:rgba(0,0,0,0.05); padding:2px 4px; border-radius:4px;">dashboard-sdk</code> running
+            completely independently from the host app.
+            It uses a Secure Proxy to fetch data.
+        </div>
+
+        <!-- SDK Highlight Wrapper -->
+        <div class="sdk-wrapper">
+            <div class="sdk-label">SDK WIDGET AREA</div>
+
+            <!-- 2. Target Container -->
+            <div id="external-dashboard"></div>
+        </div>
+    </div>
+
+    <!-- 3. Module Script -->
     <script type="module" src="/sdk/dashboard-widget.es.js"></script>
 
-    <!-- 4. Initialize -->
+    <!-- 4. Initialization Script -->
     <script>
         window.onload = () => {
-            // Wait for SDK to attach to window
             const init = () => {
                 if (window.renderDashboard) {
                     window.renderDashboard('external-dashboard', {
-                        apiEndpoint: 'https://thisshouldcauseerror.com/api',
-                        filters: { repository: '' },
+                        apiEndpoint: '/api/chat', // Change this to test error states
+                        filters: { repository: 'backend-api' }, // Filter logic
                         specs: [
                             { t: 'bar', m: ['prs_opened', 'prs_merged'], ti: 'Pull Request Velocity' },
+                            { t: 'area', m: ['time_to_merge'], ti: 'Merge Time Trends' },
                             { t: 'line', m: ['active_contributors'], ti: 'Contributor Growth' },
-                            { t: 'area', m: ['sla_compliance'], ti: 'SLA Compliance Trend' }
+                            { t: 'bar', m: ['bugs_reported', 'bugs_fixed'], ti: 'Quality: Bugs' }
                         ]
                     });
                 } else {
-                    setTimeout(init, 50);
+                    setTimeout(init, 100);
                 }
             };
             init();
-        };  
+        };
     </script>
 </body>
 

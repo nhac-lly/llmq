@@ -29456,7 +29456,9 @@ Capabilities:
       background: "#f8fafc",
       minHeight: "100%",
       display: "flex",
-      flexDirection: "column"
+      flexDirection: "column",
+      padding: "1.5rem",
+      boxSizing: "border-box"
     },
     header: {
       display: "flex",

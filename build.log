@@ -1,0 +1,169 @@
+﻿
+> build
+> react-router build
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 49 modules transformed.
+node.exe : 
+[31mΓ£ù[39m Build 
+failed in 558ms
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo      
+        : NotSpecified  
+  : ([31mΓ£ù[39m Bu   
+ ild failed in 558ms    
+:String) [], Remote    
+Exception
+    + FullyQualifiedErr 
+   orId : NativeComman  
+  dError
+ 
+[31m[vite]: Rollup 
+failed to resolve 
+import "nuqs/adapters/re
+act-router" from "C:/pro
+j/llmq/app/root.tsx".
+This is most likely 
+unintended because it 
+can break your 
+application at runtime.
+If you do want to 
+externalize this module 
+explicitly add it to
+`build.rollupOptions.ext
+ernal`[39m
+    at viteLog (file:///
+C:/proj/llmq/node_module
+s/vite/dist/node/chunks/
+config.js:33635:57)
+    at file:///C:/proj/l
+lmq/node_modules/vite/di
+st/node/chunks/config.js
+:33669:73
+    at onwarn (C:\proj\l
+lmq\node_modules\@react-
+router\dev\dist\cli\inde
+x.js:1661:11)
+    at file:///C:/proj/l
+lmq/node_modules/vite/di
+st/node/chunks/config.js
+:33669:28
+    at onRollupLog (file
+:///C:/proj/llmq/node_mo
+dules/vite/dist/node/chu
+nks/config.js:33664:63)
+    at onLog (file:///C:
+/proj/llmq/node_modules/
+vite/dist/node/chunks/co
+nfig.js:33467:4)
+    at file:///C:/proj/l
+lmq/node_modules/rollup/
+dist/es/shared/node-entr
+y.js:20958:32
+    at Object.logger 
+[as onLog] (file:///C:/p
+roj/llmq/node_modules/ro
+llup/dist/es/shared/node
+-entry.js:22945:9)
+    at ModuleLoader.hand
+leInvalidResolvedId (fil
+e:///C:/proj/llmq/node_m
+odules/rollup/dist/es/sh
+ared/node-entry.js:21689
+:26)
+    at file:///C:/proj/l
+lmq/node_modules/rollup/
+dist/es/shared/node-entr
+y.js:21647:26 {
+  watchFiles: [
+    'C:\\proj\\llmq\\pac
+kage.json',
+    'C:/proj/llmq/app/ro
+ot.tsx',
+    'C:/proj/llmq/node_m
+odules/@react-router/dev
+/dist/config/defaults/en
+try.client.tsx',
+    'C:/proj/llmq/app/ro
+utes/home.tsx',
+    'C:/proj/llmq/app/ro
+utes/about.tsx',
+    'C:/proj/llmq/node_m
+odules/react-router/dist
+/development/dom-export.
+mjs',
+    'C:/proj/llmq/node_m
+odules/react/jsx-runtime
+.js',
+    'C:/proj/llmq/node_m
+odules/react/index.js',
+    'C:/proj/llmq/node_m
+odules/react-dom/client.
+js',
+    'C:/proj/llmq/node_m
+odules/react/cjs/react.p
+roduction.js',
+    'C:/proj/llmq/node_m
+odules/react/cjs/react-j
+sx-runtime.production.js
+',
+    'C:/proj/llmq/node_m
+odules/react-router/dist
+/development/chunk-FNSCY
+PCZ.mjs',
+    'C:/proj/llmq/node_m
+odules/react-router/dist
+/development/chunk-EPOLD
+U6W.mjs',
+    'C:/proj/llmq/node_m
+odules/react-dom/cjs/rea
+ct-dom-client.production
+.js',
+    'C:/proj/llmq/node_m
+odules/react-dom/index.j
+s',
+    'C:/proj/llmq/node_m
+odules/scheduler/index.j
+s',
+    'C:/proj/llmq/node_m
+odules/react-router/node
+_modules/cookie/dist/ind
+ex.js',
+    'C:/proj/llmq/node_m
+odules/set-cookie-parser
+/lib/set-cookie.js',
+    'C:/proj/llmq/node_m
+odules/react-dom/cjs/rea
+ct-dom.production.js',
+    'C:/proj/llmq/node_m
+odules/scheduler/cjs/sch
+eduler.production.js',
+    'C:/proj/llmq/app/ho
+oks/useUCO.ts',
+    'C:/proj/llmq/app/li
+b/uco/adapters/billboard
+Adapter.ts',
+    'C:/proj/llmq/sample
+.json',
+    'C:/proj/llmq/app/li
+b/uco/UniversalChartCont
+roller.ts',
+    'C:/proj/llmq/node_m
+odules/react-router/dist
+/development/index.mjs',
+    'C:/proj/llmq/node_m
+odules/billboard.js/dist
+/billboard.css',
+    'C:/proj/llmq/node_m
+odules/billboard.js/dist
+-esm/billboard.js'
+  ]
+}

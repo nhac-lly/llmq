@@ -130,7 +130,7 @@ export default function About() {
   window.onload = () => {
     if (window.renderDashboard) {
         window.renderDashboard('my-dashboard', {
-            apiEndpoint: '/api/chat', // Use Secure Proxy
+            apiEndpoint: '/api/dashboard', // Use Secure Proxy
             specs: [
                 { t: 'bar', m: ['prs_opened', 'prs_merged'], ti: 'PR Velocity' },
                 { t: 'area', m: ['time_to_merge'], ti: 'Time to Merge' }
@@ -155,7 +155,7 @@ function DemoInitializer() {
         const initWidget = () => {
             if ((window as any).renderDashboard) {
                 (window as any).renderDashboard('demo-dashboard', {
-                    apiEndpoint: '/api/chat',
+                    apiEndpoint: '/api/dashboard',
                     specs: [
                         { t: 'bar', m: ['prs_opened', 'prs_merged'], ti: 'Pull Request Velocity' },
                         { t: 'line', m: ['active_contributors'], ti: 'Active Contributors' }

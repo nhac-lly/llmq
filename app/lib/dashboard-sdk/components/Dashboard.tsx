@@ -237,7 +237,6 @@ export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiE
                         contextData={{ ...contextData, specs, globalFilters: filters }}
                         onUpdateDashboard={handleDashboardUpdate}
                         apiKey={apiKey}
-                        apiEndpoint={apiEndpoint}
                     />
                 </div>
             )}

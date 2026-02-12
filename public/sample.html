@@ -193,8 +193,7 @@
             const init = () => {
                 if (window.renderDashboard) {
                     window.renderDashboard('external-dashboard', {
-                        apiEndpoint: '/api/chat', // Change this to test error states
-                        apiEndpoint: '/api/chat',
+                        apiEndpoint: '/api/dashboard', // Change this to test error states
                         // filters: { repository: 'backend-api' }, // Commented out to ensure data flow first
                         specs: [
                             { t: 'bar', m: ['prs_opened', 'prs_merged'], ti: 'Pull Request Velocity' },

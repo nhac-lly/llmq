@@ -29572,8 +29572,7 @@ Capabilities:
         onClose: () => Bt(!1),
         contextData: { ...re, specs: se, globalFilters: Ne },
         onUpdateDashboard: gt,
-        apiKey: ne,
-        apiEndpoint: M
+        apiKey: ne
       }
     ) })
   ] });

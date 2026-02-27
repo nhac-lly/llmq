@@ -3,7 +3,7 @@ import { Link, useLoaderData, useSearchParams, useNavigate, useNavigation } from
 import { useEffect, useState } from "react";
 import { fetchChartData } from "../services/api";
 import { fetchDashboardMetrics } from "../services/mock_kpi";
-import { UniversalChartOrchestrator, BillboardChart, ChatPanel, type ChartSpec } from "../lib/dashboard-sdk";
+import { UniversalChartOrchestrator, BillboardChart, ChatPanel, Dashboard, type ChartSpec } from "../lib/dashboard-sdk";
 import { Sidebar } from "../components/Sidebar";
 
 // Initialize SDK
@@ -101,8 +101,6 @@ export default function Home() {
 
     navigate(`?${cleanURL(newParams)}`);
   };
-
-  const [isChatOpen, setIsChatOpen] = useState(true);
 
   const styles = {
     container: {
@@ -273,56 +271,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Charts Grid (UCO Driven) */}
-        <div style={styles.chartsGrid}>
-          {specs.map((spec, index) => {
-            const chartData = uco.getDataForSpec(spec, resultMap, globalFilters);
-            return (
-              <div key={index} style={styles.chartCard}>
-                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <h3 style={{ fontWeight: '600', fontSize: '1.125rem' }}>{spec.ti || `Analytics Chart ${index + 1}`}</h3>
-                    {spec.f && spec.f.region && (
-                      <span style={{ fontSize: '0.75rem', color: '#3b82f6', background: '#eff6ff', padding: '2px 8px', borderRadius: '12px' }}>
-                        {spec.f.region.toUpperCase()} Only
-                      </span>
-                    )}
-                  </div>
-                  <button style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#cbd5e1' }}>•••</button>
-                </div>
-
-                <BillboardChart
-                  id={`chart-${index}`}
-                  spec={spec}
-                  data={chartData}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        {specs.length === 0 && (
-          <div style={{ textAlign: "center", color: "#94a3b8", padding: "4rem" }}>
-            <p>No charts configuration found via URL.</p>
-          </div>
-        )}
-
+        {/* Charts Grid & Chat (SDK Driven) */}
+        <Dashboard
+          apiEndpoint="/api/dashboard"
+          chatMode="aside"
+          initialFilters={globalFilters}
+          initialSpecs={specs}
+          contextData={{ kpiData, specs, globalFilters }}
+        />
       </main>
-
-      {/* Fab to toggle chat */}
-      {!isChatOpen && (
-        <button onClick={() => setIsChatOpen(true)} style={styles.fab}>
-          💬
-        </button>
-      )}
-
-      {/* Chat Panel */}
-      {isChatOpen && <ChatPanel
-        onClose={() => setIsChatOpen(false)}
-        contextData={{ kpiData, specs, globalFilters }}
-        onUpdateDashboard={handleDashboardUpdate}
-        apiEndpoint="/api/chat"
-      />}
     </div>
   );
 }

@@ -3,6 +3,7 @@ export interface ChartSpec {
     t: 'line' | 'bar' | 'area' | 'spline' | 'pie' | 'donut';
     m: string[];
     ti?: string;
+    summary?: string;
     s?: boolean;
     f?: Record<string, any>;
 }

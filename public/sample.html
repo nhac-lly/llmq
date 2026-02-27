@@ -73,6 +73,8 @@
             flex: 1;
             padding: 2rem 3rem;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
 
         .host-header {
@@ -103,6 +105,11 @@
             border: 1px solid #e2e8f0;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            /* allow spreading in main container */
+            min-height: 0;
         }
 
         .sdk-label {
@@ -120,6 +127,8 @@
 
         /* The actual container script targets */
         #external-dashboard {
+            display: flex;
+            flex: 1;
             min-height: 600px;
             /* The SDK will fill this */
         }
@@ -194,6 +203,7 @@
                 if (window.renderDashboard) {
                     window.renderDashboard('external-dashboard', {
                         apiEndpoint: '/api/dashboard', // Change this to test error states
+                        chatMode: 'aside', // Options: 'floating' | 'aside'
                         // filters: { repository: 'backend-api' }, // Commented out to ensure data flow first
                         specs: [
                             { t: 'bar', m: ['prs_opened', 'prs_merged'], ti: 'Pull Request Velocity' },

@@ -60,6 +60,12 @@ export class UniversalChartOrchestrator {
                             console.log(`[UCO] Fetched ${metric}:`, data);
                             if (data && data.length > 0) {
                                 results[cacheKey] = data[0].values;
+
+                                // Automatically attach backend metric summary to the chart spec
+                                // if the spec doesn't already have a locally defined summary
+                                if (!spec.summary && data[0].summary) {
+                                    spec.summary = data[0].summary;
+                                }
                             } else {
                                 console.warn(`[UCO] No data for ${metric}`);
                                 results[cacheKey] = [];

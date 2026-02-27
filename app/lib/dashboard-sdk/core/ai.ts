@@ -7,6 +7,18 @@ interface ChatConfig {
     endpoint?: string;
 }
 
+function injectCitations(content: string, citations?: string[]) {
+    if (!citations || citations.length === 0) return content;
+    // Replace [1], [2] with markdown links [[1]](url)
+    return content.replace(/\[(\d+)\]/g, (match, num) => {
+        const index = parseInt(num) - 1;
+        if (citations[index]) {
+            return `[[${num}]](${citations[index]})`;
+        }
+        return match;
+    });
+}
+
 export async function sendChatRequest(config: ChatConfig, messages: ChatMessage[]) {
     // 1. Prefer Endpoint (Proxy) if available
     if (config.endpoint) {
@@ -26,7 +38,7 @@ export async function sendChatRequest(config: ChatConfig, messages: ChatMessage[
             }
 
             const data = await response.json();
-            return data.choices[0].message.content;
+            return injectCitations(data.choices[0].message.content, data.citations);
         } catch (error) {
             console.error("Chat Proxy Request Failed:", error);
             throw error;
@@ -59,7 +71,7 @@ export async function sendChatRequest(config: ChatConfig, messages: ChatMessage[
         }
 
         const data = await response.json();
-        return data.choices[0].message.content;
+        return injectCitations(data.choices[0].message.content, data.citations);
     } catch (error) {
         console.error("Chat Request Failed:", error);
         throw error;

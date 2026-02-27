@@ -1,16 +1,16 @@
 import { type LoaderFunctionArgs } from "react-router";
 
 // Mock Database (Moved to Server)
-const DATABASE: Record<string, number[]> = {
-    prs_opened: [12, 15, 18, 14, 22, 25],
-    prs_merged: [10, 12, 15, 13, 20, 24],
-    time_to_merge: [2.5, 2.8, 2.2, 2.1, 1.9, 1.8],
-    active_contributors: [8, 9, 11, 11, 14, 15],
-    bugs_reported: [5, 3, 6, 8, 4, 2],
-    bugs_fixed: [4, 3, 5, 7, 3, 2],
-    health_score: [98, 97, 99, 98, 98.5, 99],
-    review_cycles: [1.5, 1.4, 1.3, 1.2, 1.1, 1.2],
-    sla_compliance: [92, 93, 91, 94, 95, 94.2]
+const DATABASE: Record<string, { values: number[], summary: string }> = {
+    prs_opened: { values: [12, 15, 18, 14, 22, 25], summary: "Number of Pull Requests opened." },
+    prs_merged: { values: [10, 12, 15, 13, 20, 24], summary: "Number of Pull Requests successfully merged." },
+    time_to_merge: { values: [2.5, 2.8, 2.2, 2.1, 1.9, 1.8], summary: "Average turnaround time (days) for merging pull requests." },
+    active_contributors: { values: [8, 9, 11, 11, 14, 15], summary: "Number of unique contributors committing code in the period." },
+    bugs_reported: { values: [5, 3, 6, 8, 4, 2], summary: "Volume of new bugs or issues reported." },
+    bugs_fixed: { values: [4, 3, 5, 7, 3, 2], summary: "Volume of reported bugs that have been successfully resolved." },
+    health_score: { values: [98, 97, 99, 98, 98.5, 99], summary: "Overall system/service health calculated metric." },
+    review_cycles: { values: [1.5, 1.4, 1.3, 1.2, 1.1, 1.2], summary: "Average number of code review iteration cycles per PR." },
+    sla_compliance: { values: [92, 93, 91, 94, 95, 94.2], summary: "Percentage of issues tracking against defined SLA timelines." }
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -45,9 +45,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     if (date === '7d') sliceStart = -3;
 
     const data = metrics.map(metric => {
-        const fullData = DATABASE[metric] || [];
-        const values = fullData.slice(sliceStart).map(v => Number((v * modifier).toFixed(1)));
-        return { name: metric, values };
+        const fullData = DATABASE[metric]?.values || [];
+        const summary = DATABASE[metric]?.summary || "";
+        const values = fullData.slice(sliceStart).map((v: number) => Number((v * modifier).toFixed(1)));
+        return { name: metric, values, summary };
     });
 
     return Response.json(data);

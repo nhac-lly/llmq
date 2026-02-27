@@ -10,7 +10,7 @@ import { Dashboard } from './components/Dashboard';
     }
 
     const root = createRoot(container);
-    root.render(<Dashboard initialSpecs={config.specs} initialFilters={config.filters} apiKey={config.apiKey} apiEndpoint={config.apiEndpoint} contextData={config.contextData} />);
+    root.render(<Dashboard initialSpecs={config.specs} initialFilters={config.filters} apiKey={config.apiKey} apiEndpoint={config.apiEndpoint} contextData={config.contextData} chatMode={config.chatMode} />);
 };
 
 console.log("Dashboard SDK Loaded. Use window.renderDashboard(elementId, config) to initialize.");

@@ -12,16 +12,23 @@ interface DashboardProps {
     apiEndpoint?: string;
     apiKey?: string; // AI API Key
     contextData?: Record<string, any>; // Optional context for Chat (e.g. KPIs)
+    chatMode?: 'floating' | 'aside';
 }
 
-export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiEndpoint, contextData = {} }: DashboardProps) => {
+export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiEndpoint, contextData = {}, chatMode: initialChatMode = 'floating' }: DashboardProps) => {
     const [specs, setSpecs] = useState<ChartSpec[]>(initialSpecs);
     const [filters, setFilters] = useState<Record<string, any>>(initialFilters);
     const [dataMap, setDataMap] = useState<any>({});
     const [errorMap, setErrorMap] = useState<Record<string, string>>({});
 
     const [loading, setLoading] = useState(false);
-    const [isChatOpen, setIsChatOpen] = useState(true);
+
+    // Manage chat mode via state so it can be toggled
+    const [chatMode, setChatMode] = useState<'floating' | 'aside'>(initialChatMode);
+
+    // If it's aside, we might default to open, else whatever it was
+    const [isChatOpen, setIsChatOpen] = useState(initialChatMode === 'aside' ? true : false);
+    const [hoveredChartIndex, setHoveredChartIndex] = useState<number | null>(null);
 
     const ucoRef = useRef(new UniversalChartOrchestrator({ endpoint: apiEndpoint }));
     const uco = ucoRef.current;
@@ -82,6 +89,7 @@ export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiE
     const styles = {
         // ... Copying mostly from Home.tsx but scoping to the dashboard container
         container: {
+            position: 'relative' as const,
             fontFamily: "'Inter', sans-serif",
             color: "#0f172a",
             background: "#f8fafc",
@@ -164,81 +172,190 @@ export const Dashboard = ({ initialSpecs = [], initialFilters = {}, apiKey, apiE
     };
 
     return (
-        <div style={styles.container}>
-            {/* Header */}
-            <header style={styles.header}>
-                <div>
-                    <h2 style={styles.title}>Git Metrics Dashboard</h2>
-                    <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Powered by Dashboard SDK</p>
-                </div>
+        <div style={{ display: 'flex', flexDirection: 'row', minHeight: '100%', width: '100%' }}>
+            {/* Main Content */}
+            <div style={{ ...styles.container, flex: 1, overflow: 'auto' }}>
+                {/* Header */}
+                <header style={styles.header}>
+                    <div>
+                        <h2 style={styles.title}>Git Metrics Dashboard</h2>
+                        <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Powered by Dashboard SDK</p>
+                    </div>
 
-                <div style={styles.controls}>
-                    {loading && <span style={{ fontSize: '0.8rem', color: '#3b82f6' }}>Loading...</span>}
+                    <div style={styles.controls}>
+                        {loading && <span style={{ fontSize: '0.8rem', color: '#3b82f6' }}>Loading...</span>}
 
-                    {uco.getAvailableFilters().map((filterConfig) => (
-                        <select
-                            key={filterConfig.key}
-                            style={styles.select}
-                            value={filters[filterConfig.key] || ""}
-                            onChange={(e) => updateFilter(filterConfig.key, e.target.value)}
-                        >
-                            {filterConfig.options.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
-                    ))}
-                </div>
-            </header>
+                        {uco.getAvailableFilters().map((filterConfig) => (
+                            <select
+                                key={filterConfig.key}
+                                style={styles.select}
+                                value={filters[filterConfig.key] || ""}
+                                onChange={(e) => updateFilter(filterConfig.key, e.target.value)}
+                            >
+                                {filterConfig.options.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        ))}
+                    </div>
+                </header>
 
-            {/* KPIs */}
+                {/* KPIs */}
 
 
-            {/* Charts */}
-            <div style={styles.chartsGrid}>
-                {specs.map((spec, index) => {
-                    const chartData = uco.getDataForSpec(spec, dataMap, filters);
-                    const error = uco.getErrorForSpec(spec, errorMap, filters);
+                {/* Charts */}
+                <div style={styles.chartsGrid}>
+                    {specs.map((spec, index) => {
+                        const chartData = uco.getDataForSpec(spec, dataMap, filters);
+                        const error = uco.getErrorForSpec(spec, errorMap, filters);
 
-                    console.log(`[Dashboard] Rendering Chart ${index} (${spec.ti})`, { chartData, error });
+                        console.log(`[Dashboard] Rendering Chart ${index} (${spec.ti})`, { chartData, error });
 
-                    return (
-                        <div key={index} style={styles.chartCard}>
-                            <h3 style={{ fontWeight: '600', fontSize: '1.125rem', marginBottom: '1rem' }}>{spec.ti}</h3>
-                            {error ? (
-                                <div style={{
-                                    height: '300px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#ef4444',
-                                    background: '#fef2f2',
-                                    borderRadius: '8px',
-                                    flexDirection: 'column',
-                                    gap: '0.5rem'
-                                }}>
-                                    <span style={{ fontSize: '1.5rem' }}>⚠️</span>
-                                    <span>Failed to load data</span>
-                                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>Check API Endpoint</span>
+                        return (
+                            <div key={index} style={styles.chartCard}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                    <h3 style={{ fontWeight: '600', fontSize: '1.125rem', margin: 0 }}>{spec.ti}</h3>
+                                    {spec.summary && (
+                                        <div
+                                            onMouseEnter={() => setHoveredChartIndex(index)}
+                                            onMouseLeave={() => setHoveredChartIndex(null)}
+                                            style={{
+                                                position: 'relative',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                width: '24px',
+                                                height: '24px',
+                                                borderRadius: '50%',
+                                                background: hoveredChartIndex === index ? '#e2e8f0' : '#f1f5f9',
+                                                color: hoveredChartIndex === index ? '#334155' : '#64748b',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 'bold',
+                                                cursor: 'help',
+                                                border: '1px solid #cbd5e1',
+                                                transition: 'all 0.2s ease',
+                                                fontFamily: 'serif',
+                                                fontStyle: 'italic'
+                                            }}
+                                        >
+                                            i
+                                            {hoveredChartIndex === index && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: 'calc(100% + 8px)',
+                                                    right: '-8px',
+                                                    width: 'max-content',
+                                                    maxWidth: '280px',
+                                                    background: '#1e293b',
+                                                    color: '#f8fafc',
+                                                    padding: '0.75rem 1rem',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: 'normal',
+                                                    lineHeight: '1.5',
+                                                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)',
+                                                    zIndex: 50,
+                                                    textAlign: 'left',
+                                                    fontFamily: "'Inter', sans-serif"
+                                                }}>
+                                                    {spec.summary}
+                                                    {/* Tooltip Arrow */}
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '-4px',
+                                                        right: '16px',
+                                                        width: '10px',
+                                                        height: '10px',
+                                                        background: '#1e293b',
+                                                        transform: 'rotate(45deg)',
+                                                    }}></div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                            ) : (
-                                <BillboardChart id={`embed-chart-${index}`} spec={spec} data={chartData} />
-                            )}
-                        </div>
-                    );
-                })}
+                                {error ? (
+                                    <div style={{
+                                        height: '300px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#ef4444',
+                                        background: '#fef2f2',
+                                        borderRadius: '8px',
+                                        flexDirection: 'column',
+                                        gap: '0.5rem'
+                                    }}>
+                                        <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                                        <span>Failed to load data</span>
+                                        <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>Check API Endpoint</span>
+                                    </div>
+                                ) : (
+                                    <BillboardChart id={`embed-chart-${index}`} spec={spec} data={chartData} />
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {chatMode === 'floating' && !isChatOpen && (
+                    <button onClick={() => setIsChatOpen(true)} style={styles.fab}>💬</button>
+                )}
+
+                {chatMode === 'aside' && !isChatOpen && (
+                    <button onClick={() => setIsChatOpen(true)} style={styles.fab}>💬</button>
+                )}
+
+                {chatMode === 'floating' && isChatOpen && (
+                    <div style={{ position: 'fixed', bottom: 0, right: 0, zIndex: 9001 }}>
+                        <ChatPanel
+                            onClose={() => setIsChatOpen(false)}
+                            contextData={{ ...contextData, specs, globalFilters: filters }}
+                            onUpdateDashboard={handleDashboardUpdate}
+                            apiKey={apiKey}
+                            layout="floating"
+                            onToggleLayout={() => setChatMode(prev => prev === 'floating' ? 'aside' : 'floating')}
+                        />
+                    </div>
+                )}
             </div>
 
-            <button onClick={() => setIsChatOpen(true)} style={styles.fab}>💬</button>
-
-            {isChatOpen && (
-                <div style={{ position: 'fixed', bottom: 0, right: 0, zIndex: 9001 }}>
-                    <ChatPanel
-                        onClose={() => setIsChatOpen(false)}
-                        contextData={{ ...contextData, specs, globalFilters: filters }}
-                        onUpdateDashboard={handleDashboardUpdate}
-                        apiKey={apiKey}
+            {/* Aside */}
+            {chatMode === 'aside' && isChatOpen && (
+                <>
+                    {/* Backdrop to close the aside */}
+                    <div
+                        onClick={() => setIsChatOpen(false)}
+                        style={{
+                            position: 'fixed',
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'rgba(0,0,0,0.2)',
+                            zIndex: 8999
+                        }}
                     />
-                </div>
+                    {/* Fixed Drawer covering 1/3 of the viewport */}
+                    <div style={{
+                        position: 'fixed',
+                        top: 0, right: 0, bottom: 0,
+                        width: '33.33vw',
+                        minWidth: '350px',
+                        borderLeft: '1px solid #e2e8f0',
+                        background: 'white',
+                        boxShadow: '-5px 0 25px rgba(0,0,0,0.1)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        zIndex: 9000
+                    }}>
+                        <ChatPanel
+                            onClose={() => setIsChatOpen(false)}
+                            contextData={{ ...contextData, specs, globalFilters: filters }}
+                            onUpdateDashboard={handleDashboardUpdate}
+                            apiKey={apiKey}
+                            layout="aside"
+                            onToggleLayout={() => setChatMode(prev => prev === 'floating' ? 'aside' : 'floating')}
+                        />
+                    </div>
+                </>
             )}
         </div>
     );

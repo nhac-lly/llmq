@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { sendChatRequest } from "../core/ai";
 import type { ChatMessage } from "../types";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-export const ChatPanel = ({ onClose, contextData, onUpdateDashboard, apiKey: initialApiKey, apiEndpoint }: { onClose: () => void, contextData: any, onUpdateDashboard?: (data: any) => void, apiKey?: string, apiEndpoint?: string }) => {
+export const ChatPanel = ({ onClose, contextData, onUpdateDashboard, apiKey: initialApiKey, apiEndpoint, layout = 'floating', onToggleLayout }: { onClose: () => void, contextData: any, onUpdateDashboard?: (data: any) => void, apiKey?: string, apiEndpoint?: string, layout?: 'floating' | 'aside', onToggleLayout?: () => void }) => {
     const [input, setInput] = useState("");
 
     // Secure Default: Use provided endpoint OR default to /api/chat
@@ -14,6 +16,7 @@ export const ChatPanel = ({ onClose, contextData, onUpdateDashboard, apiKey: ini
 
     const [isConfiguring, setIsConfiguring] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [size, setSize] = useState<'normal' | 'expanded'>('normal');
 
     // Initial message
     const [messages, setMessages] = useState<ChatMessage[]>([
@@ -122,31 +125,58 @@ Capabilities:
         return null;
     }
 
+    const dimensions = size === 'normal'
+        ? { width: '350px', height: '500px' }
+        : { width: '600px', height: '700px' };
+
+    const containerStyle: React.CSSProperties = layout === 'floating' ? {
+        position: 'absolute',
+        bottom: '2rem',
+        right: '2rem',
+        width: dimensions.width,
+        height: dimensions.height,
+        background: 'white',
+        borderRadius: '16px',
+        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        border: '1px solid #e2e8f0',
+        zIndex: 100,
+        transition: 'width 0.2s, height 0.2s'
+    } : {
+        width: '100%',
+        height: '100%',
+        background: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+    };
+
     return (
-        <div style={{
-            position: 'fixed',
-            bottom: '2rem',
-            right: '2rem',
-            width: '350px',
-            height: '500px',
-            background: 'white',
-            borderRadius: '16px',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            border: '1px solid #e2e8f0',
-            zIndex: 100
-        }}>
+        <div style={containerStyle}>
             {/* Header */}
-            <div style={{ padding: '1rem', background: '#eff6ff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '0.75rem 1rem', background: '#eff6ff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
                     <span style={{ fontWeight: '600', color: '#1e293b' }}>Analytics Assistant</span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => setIsConfiguring(true)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>⚙️</button>
-                    <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.25rem', color: '#64748b' }}>×</button>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    {layout === 'floating' && (
+                        <button onClick={() => setSize(s => s === 'normal' ? 'expanded' : 'normal')} title={size === 'normal' ? "Expand" : "Collapse"} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1rem', color: '#64748b' }}>
+                            {size === 'normal' ? '⤢' : '⤡'}
+                        </button>
+                    )}
+                    {onToggleLayout && (
+                        <button
+                            onClick={onToggleLayout}
+                            title={`Switch to ${layout === 'floating' ? 'Aside' : 'Floating'} Mode`}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1rem', color: '#64748b', display: 'flex', alignItems: 'center' }}
+                        >
+                            {layout === 'floating' ? '◧' : '⧉'}
+                        </button>
+                    )}
+                    <button onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.25rem', color: '#64748b', display: 'flex', alignItems: 'center' }}>×</button>
                 </div>
             </div>
 
@@ -164,9 +194,16 @@ Capabilities:
                         color: msg.role === 'user' ? 'white' : '#334155',
                         borderBottomRightRadius: msg.role === 'user' ? '2px' : '12px',
                         borderBottomLeftRadius: msg.role === 'assistant' ? '2px' : '12px',
-                        whiteSpace: 'pre-wrap'
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word'
                     }}>
-                        {msg.content}
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+                            p: ({ node, ...props }) => <p style={{ margin: '0 0 0.5rem 0' }} {...props} />,
+                            a: ({ node, ...props }) => <a target="_blank" rel="noopener noreferrer" style={{ color: msg.role === 'user' ? '#bae6fd' : '#2563eb', textDecoration: 'underline', wordBreak: 'break-all' }} {...props} />,
+                            code: ({ node, ...props }) => <code style={{ background: msg.role === 'user' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)', padding: '0.1rem 0.3rem', borderRadius: '4px', fontSize: '0.8em' }} {...props} />
+                        }}>
+                            {msg.content}
+                        </ReactMarkdown>
                     </div>
                 ))}
                 {isLoading && <div style={{ alignSelf: 'flex-start', color: '#94a3b8', fontSize: '0.8rem', marginLeft: '1rem' }}>Thinking...</div>}

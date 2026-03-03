@@ -1,4 +1,20 @@
-import { type LoaderFunctionArgs } from "react-router";
+import { type LoaderFunctionArgs, type ActionFunctionArgs } from "react-router";
+
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "*",
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+    if (request.method === "OPTIONS") {
+        return new Response(null, {
+            status: 204,
+            headers: corsHeaders,
+        });
+    }
+    return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
+};
 
 // Mock Database (Moved to Server)
 const DATABASE: Record<string, { values: number[], summary: string }> = {
@@ -21,7 +37,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     // const sdkToken = request.headers.get("x-llmq-sdk-token");
     // if (sdkToken !== "LLMQ_ACCESS_GRANTED") {
-    //    return Response.json({ error: "Unauthorized Data Access" }, { status: 403 });
+    //    return Response.json({ error: "Unauthorized Data Access" }, { status: 403, headers: corsHeaders });
     // }
 
     // Actually, for the "Public Widget" use case, usually public data IS available, 
@@ -51,5 +67,5 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         return { name: metric, values, summary };
     });
 
-    return Response.json(data);
+    return Response.json(data, { headers: corsHeaders });
 };

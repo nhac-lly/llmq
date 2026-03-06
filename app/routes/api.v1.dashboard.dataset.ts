@@ -16,7 +16,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
 };
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
+    const url = new URL(request.url);
+    const metrics = url.searchParams.get("metrics");
+    const role = url.searchParams.get("role")?.toLowerCase();
+
+    // Default or fallback
     return Response.json({
         dataset: {
             columns: [

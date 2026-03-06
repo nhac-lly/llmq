@@ -7,4 +7,6 @@ export default [
     route("pricing", "routes/pricing.tsx"),
     route("api/chat", "routes/api.chat.ts"),
     route("api/dashboard", "routes/api.dashboard.ts"),
+    route("api/v1/dashboards", "routes/api.v1.dashboards.ts"),
+    route("api/v1/dashboard/:dashboardId/chart/:chartId/dataset", "routes/api.v1.dashboard.dataset.ts"),
 ] satisfies RouteConfig;

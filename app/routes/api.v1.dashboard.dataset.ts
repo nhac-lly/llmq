@@ -1,4 +1,20 @@
-import type { LoaderFunctionArgs } from "react-router";
+import { type LoaderFunctionArgs, type ActionFunctionArgs } from "react-router";
+
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "*",
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+    if (request.method === "OPTIONS") {
+        return new Response(null, {
+            status: 204,
+            headers: corsHeaders,
+        });
+    }
+    return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
     return Response.json({
@@ -10,5 +26,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                 ["Rework", 15]
             ]
         }
-    });
+    }, { headers: corsHeaders });
 }

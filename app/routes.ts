@@ -9,4 +9,5 @@ export default [
     route("api/dashboard", "routes/api.dashboard.ts"),
     route("api/v1/dashboards", "routes/api.v1.dashboards.ts"),
     route("api/v1/dashboard/dataset", "routes/api.v1.dashboard.dataset.ts"),
+    route("api/v1/dashboard/metadata", "routes/api.v1.dashboard.metadata.ts"),
 ] satisfies RouteConfig;

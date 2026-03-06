@@ -17,6 +17,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
+    if (request.method === "OPTIONS") {
+        return new Response(null, {
+            status: 204,
+            headers: corsHeaders,
+        });
+    }
+
     const url = new URL(request.url);
     const metrics = url.searchParams.get("metrics");
     const role = url.searchParams.get("role")?.toLowerCase();

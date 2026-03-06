@@ -6,6 +6,16 @@ const corsHeaders = {
     "Access-Control-Allow-Headers": "*",
 };
 
+export const loader = async ({ request }: ActionFunctionArgs) => {
+    if (request.method === "OPTIONS") {
+        return new Response(null, {
+            status: 204,
+            headers: corsHeaders,
+        });
+    }
+    return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
+};
+
 export const action = async ({ request }: ActionFunctionArgs) => {
     if (request.method === "OPTIONS") {
         return new Response(null, {
@@ -21,7 +31,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const apiKey = import.meta.env.VITE_PERPLEXITY_API_KEY;
 
     if (!apiKey) {
-        return Response.json({ error: "Server Configuration Error: API Key missing" }, { status: 500, headers: corsHeaders });
+        return Response.json({ error: "Server Configuration Error: API Key missing" }, { status: 500 });
     }
 
     try {

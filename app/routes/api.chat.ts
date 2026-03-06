@@ -27,30 +27,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     try {
         const body = await request.json();
         const { messages } = body;
+        const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || "";
 
-        const response = await fetch('https://api.perplexity.ai/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: 'sonar',
-                messages: messages,
-                temperature: 0.2,
-                top_p: 0.9,
-                return_related_questions: false,
-                stream: false
-            })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            return Response.json({ error: `Perplexity API Error: ${errorText}` }, { status: response.status, headers: corsHeaders });
+        if (lastMessage.includes("chart") || lastMessage.includes("render")) {
+            return Response.json({
+                "text": "ai text response",
+                "tool": "renderchart",
+                "list_chart": [
+                    {
+                        "name": "chart_name",
+                        "type": "bar",
+                        "summary": ""
+                    },
+                    {
+                        "name": "chart_name2",
+                        "type": "line",
+                        "summary": ""
+                    },
+                    {
+                        "name": "chart_name3",
+                        "type": "pie",
+                        "summary": ""
+                    }
+                ]
+            }, { headers: corsHeaders });
         }
 
-        const data = await response.json();
-        return Response.json(data, { headers: corsHeaders });
+        return Response.json({
+            "text": "ai text response"
+        }, { headers: corsHeaders });
 
     } catch (error) {
         console.error("Proxy Error:", error);
